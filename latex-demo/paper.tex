@@ -1,0 +1,228 @@
+\documentclass[a4paper]{article}
+
+%----------------导入ctex宏包以支持中文
+\usepackage{ctexcap}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+%-----------------页眉页脚设置
+\pagestyle{fancy}
+\lhead{Lecture 1}
+\chead{Statistical Learning Theory}
+\rhead{Bloomberg ML EDU}
+\lfoot{}
+\cfoot{\thepage}
+\rfoot{}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{0pt}
+
+%-----------------调整页边距
+\geometry{top=1in, bottom=1in, left=1.25in, right=1.25in}
+
+%-----------------设置字体
+\setCJKmainfont[BoldFont=华文中宋, ItalicFont=楷体]{宋体}
+\setCJKfamilyfont{song}{宋体}
+\newcommand{\song}{\CJKfamily{song}}
+\setCJKfamilyfont{kai}{楷体}
+\newcommand{\kai}{\CJKfamily{kai}}
+
+%-----------------标题设置
+\CTEXsetup[name={,},number={\chinese{section}},format={\Large\raggedright\kai}]{section}
+
+%-----------------行距调整
+\setstretch{1.5}
+
+\title{Lecture 1 \quad Statistical Learning Theory}
+\author{\kai{Alex\quad 2019年7月21日}}
+\date{}
+
+\begin{document}
+	\maketitle
+	
+	\section{决策理论：宏观视角}
+
+	统计学习理论(Statistic Learning Theory)可以看做是决策理论(Decision Theory)的子类或衍生。因此在进入统计学习理论的学习前，有必要对决策理论进行一些阐述。那么，什么是决策理论？\\
+	
+	\noindent\fbox{%
+		\parbox{\textwidth}{%
+			\begin{center}
+				\textbf{Decision theory is about finding "optimal" actions, \\ under various definitions of optimality.}
+			\end{center}
+		}%
+	}\\
+	
+	即：决策理论的主要内容是，在确定“什么是最优”的前提下，寻找“最优的”actions。那么，什么是actions？
+	
+	\subsection{什么是action？}
+
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{An action is the generic term for what is produced by our system.}
+		\end{center}
+		}%
+	}\\
+	
+	一个action是我们所构建的系统的产出。例如，对于一个预测未来3小时候后台风位置的系统，它的action可能是一个经纬度坐标(当然也可能是一个关于经纬度的概率分布等等)。
+	
+	对于系统的actions，我们需要一个能够对其进行打分的评价准则(Evaluation Criteria)。只有这样，我们才能评价我们所构建的系统的优劣。例如，对于刚刚提到的台风位置预测系统，假设action是一个经纬度坐标，我们则可以用3小时后台风的真实位置与action的距离作为评价准则——距离越大，则说明action越不好，那么也可以间接反映我们的预测系统其实不太准确。综上，评价准则对于决策理论十分重要。
+	
+	系统所有可能的actions的集合称为Action Space。在模型化现实问题时，①确定Action Space与②确定评价准则是最先进行的两个步骤。之后，我们则需要明确输入(input)、结果(outcome)和对应的输入空间(input space)、结果空间(outcome space)。
+
+	\subsection{输入与结果}	
+		
+	输入，即input，指传入系统的数据。在统计学中，输入又被称为covariate。结果，即outcome，或称label，指输入所对应的“正确答案”，是what  actually happen。特别注意，outcome虽然也可以称为output，但它并不是系统的output——系统的output是上文提到的action！
+	
+	例如，对于银行的反欺诈系统，input可能是一位客户的信息，如：年龄、性别、历史贷款情况、历史还款情况等。outcome是该客户的真实身份判定，假设该客户是事实上的“坏人”，那么outcome即为“坏人”，这是确定的、唯一的。action是系统基于input的输出，即预测。预测可能出错，即action可能为“好人”。并且，不同的系统对于同一个人的预测也可能不同。因此，我们说outcome like “right answer” is what actually happen，但action则是系统的输出，并不等同于客观事实。
+	
+	\subsection{继续建模}		
+	
+	综上，我们可以将问题模型化为(假定y与a独立)：
+
+	\begin{itemize}
+		\setstretch{0.8}
+		\item 观察，得到input x；
+		\item 系统根据input得到一个action a；
+		\item 观察，得到outcome y；
+		\item 根据评价准则，结合y，对a进行评价：$l(a,y)$。
+	\end{itemize}
+
+	上述问题对应三个空间：
+	
+	\begin{itemize}
+		\setstretch{0.8}
+		\item Input space，记做$\mathcal{X}$，表示由所有可能输入所构成的集合；
+		\item Action space，记做$\mathcal{A}$，表示由系统所有可能输出所构成的集合；
+		\item Outcome space，记做$\mathcal{Y}$，表示由所有可能结果所构成的集合。
+	\end{itemize}
+	
+	例如，对于线性回归问题，input space是$R^d$，action space是$R$，outcome space也是$R$。对于Logistic回归问题，input space是$R^d$，action space是$[0,1]$，outcome space是$\{0,1\}$。
+	
+	定义了三大空间后，我们接着定义决策函数(decision function)与损失函数(loss function)：\\
+	
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{A decision function gets input $x \in \mathcal{X}$ and produces an action $a \in \mathcal{A}$，that is:\\
+			$f: \mathcal{X} → \mathcal{A}$；\\
+			A loss function evaluates an action in the context of the outcome y，that is:\\
+			$l: \mathcal{A} × \mathcal{Y} → \mathcal{R}$。\\}
+		\end{center}
+		}%
+	}\\	
+	
+	决策函数即系统，它根据输入x，确定action a作为预测。损失函数以action a与outcome y作为它的输出，得到一个数字作为对该action a的评价。但损失函数仅仅是对一个action的评价——如何评价一个决策函数？这就是统计学习理论所关注的核心问题。
+
+	\section{统计学习理论}	
+	
+	\subsection{Risk：泛化误差}
+	
+	统计学习理论有两个基本假设：第一，action a与outcome y独立；第二，存在联合分布$P_{\mathcal{X} × \mathcal{Y}}$，所有的数据(x,y)都是从该联合分布中i.i.d产生的，即样本满足"独立同分布"的特点。
+	
+	如果一个决策函数$f(x)$是“好的”，那么说明该决策函数在联合分布上的平均表现还不错：\\
+	
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{$f(x)$ does well on average, or $l(f(x), a)$ is usually small.}
+		\end{center}
+		}%
+	}\\	
+
+	在统计学习理论中，我们用决策函数的“risk”表征它的平均表现，等同于泛化误差：\\
+	
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{The risk of a decision function $f: \mathcal{X} → \mathcal{A}$ is:\\
+			$R(f) = E\Big[l(f(x),y)\Big]$\\
+			In words, it's the expected loss of $f$ on a new example (x,y) drawn randomly from distribution $P_{\mathcal{X} × \mathcal{Y}}$.}
+		\end{center}
+		}%
+	}\\	
+	
+	在所有可能的决策函数中，一定存在一个$f$的risk最小。该risk最小的决策函数被称为贝叶斯决策函数：\\
+	
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{A Bayes decision function $f^*: \mathcal{X} → \mathcal{A}$ is a function that achieves the minimal risk among all possible functions:\\
+			$f^* = \underset{f}{\arg\min}\ R(f)$\\
+			where the minimum is taken over all functions from $\mathcal{X}$ to $\mathcal{A}$.
+			}
+		\end{center}
+		}%
+	}\\
+	
+	贝叶斯决策函数的risk被称为Bayes risk，它代表决策函数能够达到的最好的情况，是一种“标杆”。有时我们也把贝叶斯决策函数称为target function。下面是两种情景下的贝叶斯函数的形式：
+	
+	\begin{itemize}
+		\setstretch{0.8}
+		\item 最小二乘回归：评价准则是平方误差，贝叶斯函数为$f^*(x) = E[y|x]$；
+		\item 多元分类问题：评价准则是0-1误差，贝叶斯函数为$f^*(x)=\underset{1\le k \le K}{\arg\max\ P(y=k | x)}$。
+	\end{itemize}
+	
+	然而，我们无法真正解出贝叶斯决策函数，因为我们没有办法计算risk——由于我们仅仅知道有这样一个产生资料的联合分布，但并不知道该联合分布的具体信息，因此risk无法计算。所以我们需要“估计”！
+
+	\subsection{Empirical Risk：经验误差}	
+	
+	我们现有的数据是从未知分布中产生的样本：$D_n = \{(x_1， y_1), \cdots,(x_n,y_N)\}$。定义决策函数$f$的经验风险(empirical risk)：\\
+	
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{The empirical risk of $f: \mathcal{X} → \mathcal{A}$ with respect to $D_n$ is:\\
+			$\hat{R}_n(f) = \frac{1}{n}\sum_{i=1}^n l(f(x_i), y_i)$
+			}
+		\end{center}
+		}%
+	}\\
+	
+	根据大数定理，当n趋于无穷大时，$\hat{R}_n(f)$依概率收敛于$R(f)$。因此，经验风险是risk的一个相合估计量。同时，很容易证明，经验风险也是risk的无偏估计量。因此，用经验风险去估计risk是一个可行的方法。既然经验风险可以计算，那么我们就可以进行经验风险最小化(empirical risk minimization)：\\
+	
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{A function $\hat{f}$ is an empirical risk minimizer if:\\
+			$\hat{f} = \underset{f}{\arg\min}\ \hat{R}_n(f)$\\
+			where the minimum is taken over all functions.
+			}
+		\end{center}
+		}%
+	}\\
+	
+	经验风险最小化的坏处是：它使得最后得到的$\hat{f}$好像仅仅“记住”了数据——在训练数据上不犯任何错误，但这样往往说明它的泛化能力(generalize)很差——对于新的、没有见过的数据的预测能力很差。一种修改方法是，加入一些平滑的因素——smooth flavor，使得决策函数的变化不要特别剧烈。具体而言，我们可以使用Constrained ERM：在所有可行的决策函数中，拿出一个子集，即拿出一部分决策函数出来进行选择：\\
+
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{Instead of minimizing empirical risk over all decision functions.}
+		\end{center}
+		}%
+	}\\
+	
+	这“一部分决策函数”，构成假说空间(hypothesis space)：\\
+
+	\noindent\fbox{%
+	\parbox{\textwidth}{%
+		\begin{center}
+			\textbf{A hypothesis space $\mathcal{F}$ is a set of functions mapping $\mathcal{X} → \mathcal{A}$. It is the collection of decision functions we are considering.}
+		\end{center}
+		}%
+	}\\
+	
+	在hypothesis space中，我们有risk最小的hypothesis，记作：
+	$$
+	\hat{f}_n = \underset{f \in \mathcal{F}}{\arg\min}\ \hat{R}_n(f)
+	$$
+	
+	也有经验风险最小的hypothesis，记作：
+	$$
+	f^*_{\mathcal{F}} = \underset{f \in \mathcal{F}}{\arg\min}\ R(f)
+	$$
+
+\end{document}
